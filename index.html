@@ -5,13 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CARD</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+        @font-face {
+            font-family: 'neurimboGothicRegular';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-01@1.0/neurimboGothicRegular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
         body {
             margin: 0;
             padding: 0;
             background-color: #000;
             overflow: hidden;
-            font-family: 'Playfair Display', serif;
+            font-family: 'neurimboGothicRegular', sans-serif;
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -49,14 +54,6 @@
             top: 50% !important;
             left: 50% !important;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .card.animated {
-            animation: pulse 2s infinite;
-        }
     </style>
 </head>
 <body>
@@ -80,8 +77,6 @@
             '#4FC3F7', '#9575CD', '#F06292', '#A1887F', '#90A4AE'
         ];
 
-        let focusedCard = null;
-
         function createCard(link, index) {
             const card = document.createElement('div');
             card.className = 'card';
@@ -95,24 +90,21 @@
             if (card.classList.contains('focused')) {
                 window.location.href = href;
             } else {
-                if (focusedCard) {
-                    unfocusCard(focusedCard);
-                }
                 focusCard(card);
+                setTimeout(reshuffleCards, 500);
             }
         }
 
         function focusCard(card) {
-            card.classList.add('focused', 'animated');
-            focusedCard = card;
-            stopCardAnimation();
+            const allCards = document.querySelectorAll('.card');
+            allCards.forEach(c => c.classList.remove('focused'));
+            card.classList.add('focused');
+            card.style.zIndex = 1000;
         }
 
-        function unfocusCard(card) {
-            card.classList.remove('focused', 'animated');
-            moveCard(card);
-            focusedCard = null;
-            startCardAnimation();
+        function reshuffleCards() {
+            const cards = document.querySelectorAll('.card:not(.focused)');
+            cards.forEach(moveCard);
         }
 
         function animateCards() {
@@ -124,40 +116,20 @@
                 container.appendChild(card);
                 moveCard(card);
             });
-
-            startCardAnimation();
         }
 
         function moveCard(card) {
             const randomX = Math.random() * (window.innerWidth - 150);
             const randomY = Math.random() * (window.innerHeight - 225);
             const randomRotate = Math.random() * 360 - 180;
+            const randomScale = 0.8 + Math.random() * 0.4;
 
-            card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg)`;
-        }
-
-        let animationInterval;
-
-        function startCardAnimation() {
-            if (!animationInterval) {
-                animationInterval = setInterval(() => {
-                    const cards = document.querySelectorAll('.card:not(.focused)');
-                    cards.forEach(moveCard);
-                }, 5000);
-            }
-        }
-
-        function stopCardAnimation() {
-            clearInterval(animationInterval);
-            animationInterval = null;
+            card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg) scale(${randomScale})`;
+            card.style.zIndex = Math.floor(Math.random() * 900);  // Random z-index for layering
         }
 
         window.addEventListener('load', animateCards);
-        window.addEventListener('resize', () => {
-            if (!focusedCard) {
-                animateCards();
-            }
-        });
+        window.addEventListener('resize', animateCards);
     </script>
 </body>
 </html>
