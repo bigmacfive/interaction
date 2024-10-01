@@ -1,22 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index</title>
+    <title>interation is me</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Playfair Display', serif;
+        }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        .card {
+            position: absolute;
+            width: 150px;
+            height: 225px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .card a {
+            color: #000; /* 텍스트 색상을 검은색으로 변경 */
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+        }
+    </style>
 </head>
 <body>
-    <h1>HTML Links to Pages 1-10</h1>
-    <ul>
-        <li><a href="1.html">Triple Circular Rotating Text</a></li>
-        <li><a href="2.html">My Dream Phone</a></li>
-        <li><a href="3.html">Falling Business Cards</a></li>
-        <li><a href="4.html">Rainbow Paint</a></li>
-        <li><a href="5.html">Firework</a></li>
-        <li><a href="https://thunder.askitmore.com">Thunder</a></li>
-        <li><a href="https://super.askitmore.com">Chattanooga Club</a></li>
-        <li><a href="8.html">X-ray Stress Test</a></li>
-        <li><a href="9.html">Double Pendulum</a></li>
-    </ul>
+    <div class="container" id="cardContainer"></div>
+
+    <script>
+        const links = [
+            {href: "1.html", text: "Triple Circular Rotating Text"},
+            {href: "2.html", text: "My Dream Phone"},
+            {href: "3.html", text: "Falling Business Cards"},
+            {href: "4.html", text: "Rainbow Paint"},
+            {href: "5.html", text: "Firework"},
+            {href: "https://thunder.askitmore.com", text: "Thunder"},
+            {href: "https://super.askitmore.com", text: "Chattanooga Club"},
+            {href: "8.html", text: "X-ray Stress Test"},
+            {href: "9.html", text: "Double Pendulum"}
+        ];
+
+        // 레트로한 느낌의 색상으로 변경
+        const colors = [
+            '#E57373', '#FFB74D', '#FFF176', '#81C784', 
+            '#4FC3F7', '#9575CD', '#F06292', '#A1887F', '#90A4AE'
+        ];
+
+        function createCard(link, index) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.backgroundColor = colors[index % colors.length];
+            card.innerHTML = `<a href="${link.href}">${link.text}</a>`;
+            return card;
+        }
+
+        function animateCards() {
+            const container = document.getElementById('cardContainer');
+            container.innerHTML = '';
+
+            links.forEach((link, index) => {
+                const card = createCard(link, index);
+                container.appendChild(card);
+
+                moveCard(card);
+                
+                card.addEventListener('mouseover', () => {
+                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(0deg) scale(1.1)`;
+                    card.style.zIndex = 1000;
+                });
+
+                card.addEventListener('mouseout', () => {
+                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(${card.dataset.rotate}deg) scale(1)`;
+                    card.style.zIndex = 1;
+                });
+            });
+        }
+
+        function moveCard(card) {
+            const randomX = Math.random() * (window.innerWidth - 150);
+            const randomY = Math.random() * (window.innerHeight - 225);
+            const randomRotate = Math.random() * 360 - 180;
+
+            card.dataset.x = randomX;
+            card.dataset.y = randomY;
+            card.dataset.rotate = randomRotate;
+
+            card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg)`;
+        }
+
+        window.addEventListener('load', animateCards);
+        window.addEventListener('resize', animateCards);
+
+        setInterval(() => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(moveCard);
+        }, 10000); // 움직임 간격을 10초로 늘림
+    </script>
 </body>
 </html>
