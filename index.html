@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>interation is me</title>
+    <title>cards</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
         body {
@@ -31,12 +31,22 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
         .card a {
-            color: #000; /* 텍스트 색상을 검은색으로 변경 */
+            color: #000;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 18px; /* 텍스트 크기 증가 */
             font-weight: bold;
             text-align: center;
             padding: 15px;
+            transition: all 0.3s ease;
+        }
+        .card.focused {
+            z-index: 1000;
+            transform: translate(-50%, -50%) scale(1.5) !important;
+            top: 50% !important;
+            left: 50% !important;
+        }
+        .card.focused a {
+            font-size: 22px; /* 포커스 시 텍스트 크기 추가 증가 */
         }
     </style>
 </head>
@@ -56,7 +66,6 @@
             {href: "9.html", text: "Double Pendulum"}
         ];
 
-        // 레트로한 느낌의 색상으로 변경
         const colors = [
             '#E57373', '#FFB74D', '#FFF176', '#81C784', 
             '#4FC3F7', '#9575CD', '#F06292', '#A1887F', '#90A4AE'
@@ -80,14 +89,21 @@
 
                 moveCard(card);
                 
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    focusCard(card);
+                });
+
                 card.addEventListener('mouseover', () => {
-                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(0deg) scale(1.1)`;
-                    card.style.zIndex = 1000;
+                    if (!card.classList.contains('focused')) {
+                        card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(0deg) scale(1.1)`;
+                    }
                 });
 
                 card.addEventListener('mouseout', () => {
-                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(${card.dataset.rotate}deg) scale(1)`;
-                    card.style.zIndex = 1;
+                    if (!card.classList.contains('focused')) {
+                        card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(${card.dataset.rotate}deg) scale(1)`;
+                    }
                 });
             });
         }
@@ -104,13 +120,22 @@
             card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg)`;
         }
 
+        function focusCard(card) {
+            const allCards = document.querySelectorAll('.card');
+            allCards.forEach(c => {
+                c.classList.remove('focused');
+                moveCard(c);
+            });
+            card.classList.add('focused');
+        }
+
         window.addEventListener('load', animateCards);
         window.addEventListener('resize', animateCards);
 
         setInterval(() => {
-            const cards = document.querySelectorAll('.card');
+            const cards = document.querySelectorAll('.card:not(.focused)');
             cards.forEach(moveCard);
-        }, 10000); // 움직임 간격을 10초로 늘림
+        }, 10000);
     </script>
 </body>
 </html>
