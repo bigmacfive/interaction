@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cards</title>
+    <title>카드</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
         body {
@@ -12,6 +12,10 @@
             background-color: #000;
             overflow: hidden;
             font-family: 'Playfair Display', serif;
+            user-select: none; /* 텍스트 선택 방지 */
+            -webkit-user-select: none; /* Safari용 */
+            -moz-user-select: none; /* Firefox용 */
+            -ms-user-select: none; /* IE용 */
         }
         .container {
             width: 100vw;
@@ -33,20 +37,12 @@
         .card a {
             color: #000;
             text-decoration: none;
-            font-size: 18px; /* 텍스트 크기 증가 */
+            font-size: 18px;
             font-weight: bold;
             text-align: center;
             padding: 15px;
             transition: all 0.3s ease;
-        }
-        .card.focused {
-            z-index: 1000;
-            transform: translate(-50%, -50%) scale(1.5) !important;
-            top: 50% !important;
-            left: 50% !important;
-        }
-        .card.focused a {
-            font-size: 22px; /* 포커스 시 텍스트 크기 추가 증가 */
+            pointer-events: none; /* 링크 클릭 방지 */
         }
     </style>
 </head>
@@ -76,6 +72,9 @@
             card.className = 'card';
             card.style.backgroundColor = colors[index % colors.length];
             card.innerHTML = `<a href="${link.href}">${link.text}</a>`;
+            card.addEventListener('click', () => {
+                window.location.href = link.href;
+            });
             return card;
         }
 
@@ -89,21 +88,12 @@
 
                 moveCard(card);
                 
-                card.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    focusCard(card);
-                });
-
                 card.addEventListener('mouseover', () => {
-                    if (!card.classList.contains('focused')) {
-                        card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(0deg) scale(1.1)`;
-                    }
+                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(0deg) scale(1.1)`;
                 });
 
                 card.addEventListener('mouseout', () => {
-                    if (!card.classList.contains('focused')) {
-                        card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(${card.dataset.rotate}deg) scale(1)`;
-                    }
+                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(${card.dataset.rotate}deg) scale(1)`;
                 });
             });
         }
@@ -120,20 +110,11 @@
             card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg)`;
         }
 
-        function focusCard(card) {
-            const allCards = document.querySelectorAll('.card');
-            allCards.forEach(c => {
-                c.classList.remove('focused');
-                moveCard(c);
-            });
-            card.classList.add('focused');
-        }
-
         window.addEventListener('load', animateCards);
         window.addEventListener('resize', animateCards);
 
         setInterval(() => {
-            const cards = document.querySelectorAll('.card:not(.focused)');
+            const cards = document.querySelectorAll('.card');
             cards.forEach(moveCard);
         }, 10000);
     </script>
