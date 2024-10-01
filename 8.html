@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-ray Stress Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        #score {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 20vw;
+            z-index: 10;
+            font-weight: bold;
+            user-select: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+    <div id="score">0</div>
+
+    <script>
+        const { Engine, Render, World, Bodies, Body, Events, Mouse, MouseConstraint, Composite, Runner } = Matter;
+
+        // 게임 설정
+        let gameState = {
+            score: 0,
+            difficulty: 1,
+        };
+
+        // 엔진 생성
+        let engine = Engine.create();
+        let world = engine.world;
+
+        // 렌더러 생성
+        const canvas = document.getElementById('game-canvas');
+        let render = Render.create({
+            canvas: canvas,
+            engine: engine,
+            options: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                wireframes: true,
+                background: '#000000',
+                wireframeBackground: '#000000'
+            }
+        });
+
+        // 벽 생성 함수
+        function createWalls() {
+            const wallThickness = 50;
+            const walls = [
+                // 바닥
+                Bodies.rectangle(window.innerWidth / 2, window.innerHeight, window.innerWidth, wallThickness, { 
+                    isStatic: true,
+                    render: { 
+                        fillStyle: 'transparent',
+                        strokeStyle: '#ffffff',
+                        lineWidth: 1
+                    }
+                }),
+                // 왼쪽 벽
+                Bodies.rectangle(0, window.innerHeight / 2, wallThickness, window.innerHeight, { 
+                    isStatic: true,
+                    render: { 
+                        fillStyle: 'transparent',
+                        strokeStyle: '#ffffff',
+                        lineWidth: 1
+                    }
+                }),
+                // 오른쪽 벽
+                Bodies.rectangle(window.innerWidth, window.innerHeight / 2, wallThickness, window.innerHeight, { 
+                    isStatic: true,
+                    render: { 
+                        fillStyle: 'transparent',
+                        strokeStyle: '#ffffff',
+                        lineWidth: 1
+                    }
+                })
+            ];
+            return walls;
+        }
+
+        // 벽 추가
+        let walls = createWalls();
+        World.add(world, walls);
+
+        // 마우스 컨트롤 추가
+        let mouse = Mouse.create(render.canvas);
+        let mouseConstraint = MouseConstraint.create(engine, {
+            mouse: mouse,
+            constraint: {
+                stiffness: 0.2,
+                render: { visible: false }
+            }
+        });
+        World.add(world, mouseConstraint);
+
+        // 새로운 물체 생성 함수
+        function createNewBody() {
+            const shapes = [
+                () => Bodies.rectangle(0, 0, 40, 40),
+                () => Bodies.circle(0, 0, 20),
+                () => Bodies.polygon(0, 0, 3, 25),  // 삼각형
+                () => Bodies.polygon(0, 0, 5, 25),  // 오각형
+            ];
+            const shape = shapes[Math.floor(Math.random() * shapes.length)]();
+            const x = Math.random() * (window.innerWidth - 80) + 40;
+            const y = -40;
+            Body.setPosition(shape, { x, y });
+            Body.setVelocity(shape, { x: 0, y: 5 });  // 초기 속도 부여
+            shape.render.fillStyle = 'transparent';
+            shape.render.strokeStyle = '#ffffff';
+            shape.render.lineWidth = 1;
+            return shape;
+        }
+
+        // 점수 증가 함수
+        function incrementScore() {
+            gameState.score++;
+            document.getElementById('score').innerHTML = gameState.score;
+            if (gameState.score % 5 === 0) {
+                gameState.difficulty += 0.1;
+            }
+        }
+
+        // 점수 표시 애니메이션
+        function animateScore() {
+            const scoreElement = document.getElementById('score');
+            scoreElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            setTimeout(() => {
+                scoreElement.style.transform = 'translate(-50%, -50%) scale(1)';
+            }, 100);
+        }
+
+        // 충돌 이벤트 처리
+        Events.on(engine, 'collisionStart', function(event) {
+            let pairs = event.pairs;
+            for (let i = 0; i < pairs.length; i++) {
+                let pair = pairs[i];
+                if (!pair.bodyA.isStatic && !pair.bodyB.isStatic) {
+                    // 두 물체가 충돌했고, 둘 다 정적 물체(벽이나 바닥)가 아닐 때 점수 증가
+                    incrementScore();
+                    animateScore();
+                    break;  // 한 번의 충돌에 대해 한 번만 점수 증가
+                }
+            }
+        });
+
+        // 게임 루프
+        let lastSpawnTime = 0;
+        Events.on(engine, 'afterUpdate', function() {
+            const currentTime = engine.timing.timestamp;
+
+            if (currentTime - lastSpawnTime > 2000 / gameState.difficulty) {
+                const newBody = createNewBody();
+                World.add(world, newBody);
+                lastSpawnTime = currentTime;
+            }
+
+            // 화면 흔들기 효과
+            const bodies = Composite.allBodies(world);
+            let totalVelocity = 0;
+            for (let body of bodies) {
+                if (!body.isStatic) {
+                    totalVelocity += Math.abs(body.velocity.x) + Math.abs(body.velocity.y);
+                }
+            }
+            const shake = Math.min(totalVelocity / 20, 5);
+            render.context.setTransform(1, 0, 0, 1, Math.random() * shake - shake / 2, Math.random() * shake - shake / 2);
+        });
+
+        // 게임 재시작 함수
+        function restartGame() {
+            World.clear(world);
+            Engine.clear(engine);
+            
+            engine = Engine.create();
+            world = engine.world;
+            
+            render.engine = engine;
+            
+            walls = createWalls();
+            World.add(world, walls);
+            
+            mouse = Mouse.create(render.canvas);
+            mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: { visible: false }
+                }
+            });
+            World.add(world, mouseConstraint);
+            
+            gameState = {
+                score: 0,
+                difficulty: 1,
+            };
+            
+            document.getElementById('score').innerHTML = '0';
+        }
+
+        // 점수 영역 클릭 이벤트
+        document.getElementById('score').addEventListener('click', restartGame);
+
+        // 렌더링 시작
+        Render.run(render);
+
+        // 엔진 실행
+        let runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // 화면 크기 조정
+        window.addEventListener('resize', function() {
+            render.canvas.width = window.innerWidth;
+            render.canvas.height = window.innerHeight;
+            World.remove(world, walls);
+            walls = createWalls();
+            World.add(world, walls);
+        });
+    </script>
+</body>
+</html>

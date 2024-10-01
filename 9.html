@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Double Pendulum</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <script>
+        var Example = Example || {};
+
+        Example.doublePendulum = function() {
+            var Engine = Matter.Engine,
+                Render = Matter.Render,
+                Runner = Matter.Runner,
+                Body = Matter.Body,
+                Composite = Matter.Composite,
+                Composites = Matter.Composites,
+                Constraint = Matter.Constraint,
+                MouseConstraint = Matter.MouseConstraint,
+                Mouse = Matter.Mouse,
+                Bodies = Matter.Bodies,
+                Vector = Matter.Vector;
+
+            var engine = Engine.create(),
+                world = engine.world;
+
+            var containerElement = document.getElementById('canvas-container');
+            var containerWidth = containerElement.clientWidth;
+            var containerHeight = containerElement.clientHeight;
+            var size = Math.min(containerWidth, containerHeight);
+
+            var render = Render.create({
+                element: containerElement,
+                engine: engine,
+                options: {
+                    width: size,
+                    height: size,
+                    wireframes: false,
+                    background: '#000',
+                    pixelRatio: 'auto'
+                }
+            });
+
+            Render.run(render);
+
+            var runner = Runner.create();
+            Runner.run(runner, engine);
+
+            var group = Body.nextGroup(true),
+                length = size * 0.25,
+                width = length * 0.05;
+                
+            var pendulum = Composites.stack(size / 2, size * 0.2, 2, 1, -20, 0, function(x, y) {
+                return Bodies.rectangle(x, y, length, width, { 
+                    collisionFilter: { group: group },
+                    frictionAir: 0,
+                    chamfer: 5,
+                    render: {
+                        fillStyle: 'rgba(255,255,255,0.2)',
+                        lineWidth: 1
+                    }
+                });
+            });
+
+            engine.gravity.scale = 0.001;
+            
+            Composites.chain(pendulum, 0.45, 0, -0.45, 0, { 
+                stiffness: 0.8, 
+                length: 0,
+                angularStiffness: 0.5,
+                render: {
+                    strokeStyle: '#FFF'
+                }
+            });
+            
+            Composite.add(pendulum, Constraint.create({ 
+                bodyB: pendulum.bodies[0],
+                pointB: { x: -length * 0.42, y: 0 },
+                pointA: { x: size / 2, y: size * 0.2 },
+                stiffness: 0.8,
+                length: 0,
+                render: {
+                    strokeStyle: '#FFF'
+                }
+            }));
+
+            var lowerArm = pendulum.bodies[1];
+
+            Body.rotate(lowerArm, -Math.PI * 0.3, {
+                x: lowerArm.position.x - length / 2,
+                y: lowerArm.position.y
+            });
+            
+            Composite.add(world, pendulum);
+
+            var trail = [];
+
+            Matter.Events.on(render, 'afterRender', function() {
+                trail.unshift({
+                    position: Vector.clone(lowerArm.position),
+                    speed: lowerArm.speed
+                });
+
+                Render.startViewTransform(render);
+                render.context.globalAlpha = 0.7;
+
+                for (var i = 0; i < trail.length; i += 1) {
+                    var point = trail[i].position,
+                        speed = trail[i].speed;
+                    
+                    var hue = (Date.now() / 50 + i * 2) % 360;
+                    render.context.fillStyle = 'hsla(' + hue + ', 100%, 50%, 0.8)';
+                    render.context.beginPath();
+                    render.context.arc(point.x, point.y, Math.min(5, speed / 2), 0, 2 * Math.PI);
+                    render.context.fill();
+                }
+
+                render.context.globalAlpha = 1;
+                Render.endViewTransform(render);
+
+                if (trail.length > 500) {
+                    trail.pop();
+                }
+            });
+
+            var mouse = Mouse.create(render.canvas),
+                mouseConstraint = MouseConstraint.create(engine, {
+                    mouse: mouse,
+                    constraint: {
+                        stiffness: 0.2,
+                        render: {
+                            visible: false
+                        }
+                    }
+                });
+
+            Composite.add(world, mouseConstraint);
+
+            render.mouse = mouse;
+
+            function resizeCanvas() {
+                containerWidth = containerElement.clientWidth;
+                containerHeight = containerElement.clientHeight;
+                size = Math.min(containerWidth, containerHeight);
+
+                render.canvas.width = size;
+                render.canvas.height = size;
+                Matter.Render.setPixelRatio(render, 'auto');
+
+                Render.lookAt(render, {
+                    min: { x: 0, y: 0 },
+                    max: { x: size, y: size }
+                });
+
+                // 펜듈럼 위치 재조정
+                Composite.translate(pendulum, Vector.sub(
+                    Vector.create(size / 2, size * 0.2),
+                    Vector.create(pendulum.bodies[0].position.x, pendulum.bodies[0].position.y)
+                ));
+
+                // 고정점 위치 업데이트
+                pendulum.constraints[2].pointA = Vector.create(size / 2, size * 0.2);
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            return {
+                engine: engine,
+                runner: runner,
+                render: render,
+                canvas: render.canvas,
+                stop: function() {
+                    Matter.Render.stop(render);
+                    Matter.Runner.stop(runner);
+                }
+            };
+        };
+
+        Example.doublePendulum();
+    </script>
+</body>
+</html>
