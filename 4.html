@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Paint</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: "Hiragino Kaku Gothic Pro", "メイリオ", sans-serif;
+        }
+        #canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #textBackground {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-height: 80%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="textBackground"></div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let hue = 0;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = Math.random() * 20 + 10;
+                this.speedY = Math.random() * 0.3 + 0.05;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.gravity = 0.03;
+                this.friction = 0.99;
+            }
+
+            update() {
+                this.speedY += this.gravity;
+                this.speedY *= this.friction;
+                this.speedX *= this.friction;
+                this.y += this.speedY;
+                this.x += this.speedX;
+                if (this.radius > 0.5) this.radius -= 0.01;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        let particles = [];
+
+        function createRandomRainbowColor() {
+            hue = (hue + 10) % 360;
+            return `hsla(${hue}, 100%, 50%, 0.7)`;
+        }
+
+        function addParticles(x, y) {
+            const color = createRandomRainbowColor();
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(
+                    x + (Math.random() - 0.5) * 30, 
+                    y + (Math.random() - 0.5) * 30, 
+                    color
+                ));
+            }
+        }
+
+        function createTextBackground() {
+            const textBackground = document.getElementById('textBackground');
+            textBackground.style.color = 'black';
+            textBackground.style.fontSize = '36px';
+            textBackground.style.fontWeight = 'bold';
+            textBackground.style.lineHeight = '2';
+            textBackground.style.whiteSpace = 'pre-wrap';
+            textBackground.textContent = '今は何時ですか？\n\n今は何時ですか？\n\n今は何時ですか？';
+        }
+
+        function animate() {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.01)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                
+                if (particles[i].radius <= 0.5) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // 마우스 오버 이벤트 리스너 추가
+        canvas.addEventListener('mousemove', (e) => {
+            addParticles(e.clientX, e.clientY);
+        });
+
+        // 터치 이벤트 처리 (모바일 디바이스용)
+        canvas.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            addParticles(touch.clientX, touch.clientY);
+            e.preventDefault();
+        });
+
+        createTextBackground();
+        animate();
+    </script>
+</body>
+</html>
