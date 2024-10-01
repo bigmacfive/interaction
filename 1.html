@@ -1,1 +1,93 @@
-ㅎㅎ
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triple Circular Rotating Text</title>
+    <style>
+        @font-face {
+            font-family: 'neurimboGothicRegular';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-01@1.0/neurimboGothicRegular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: 'neurimboGothicRegular', Arial, sans-serif;
+        }
+        .circle-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+        .circle-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .circle-text span {
+            position: absolute;
+            left: 50%;
+            transform-origin: 0 150px;
+            font-weight: bold;
+            font-family: 'neurimboGothicRegular', Arial, sans-serif;
+        }
+        #outerCircle {
+            animation: rotateClockwise 15s linear infinite;
+        }
+        #middleCircle {
+            animation: rotateCounterClockwise 12s linear infinite;
+        }
+        #innerCircle {
+            animation: rotateClockwise 10s linear infinite;
+        }
+        #outerCircle span { font-size: 14px; top: 0; }
+        #middleCircle span { font-size: 12px; top: 50px; color: #444; }
+        #innerCircle span { font-size: 16px; top: 100px; color: #888; }
+        @keyframes rotateClockwise {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes rotateCounterClockwise {
+            100% { transform: rotate(-360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="circle-container">
+        <div class="circle-text" id="outerCircle"></div>
+        <div class="circle-text" id="middleCircle"></div>
+        <div class="circle-text" id="innerCircle"></div>
+    </div>
+
+    <script>
+        function createCircleText(elementId, text, radius) {
+            const element = document.getElementById(elementId);
+            const characters = text.split('');
+            const degreesPerCharacter = 360 / characters.length;
+
+            characters.forEach((char, i) => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.style.transform = `rotate(${i * degreesPerCharacter}deg)`;
+                span.style.transformOrigin = `0 ${radius}px`;
+                element.appendChild(span);
+            });
+        }
+
+        const outerText = "Dribbble | Twitter | GitHub | LinkedIn | Medium | Email ".repeat(1).trim();
+        const middleText = "INTERACTIVE PRODUCT MANAGER".repeat(1).trim();
+        const innerText = "leeminkyu ".repeat(1).trim();
+
+        createCircleText('outerCircle', outerText, 250);
+        createCircleText('middleCircle', middleText, 160);
+        createCircleText('innerCircle', innerText, 50);
+    </script>
+</body>
+</html>
