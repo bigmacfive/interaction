@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카드</title>
+    <title>CARD</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
         body {
@@ -12,10 +12,10 @@
             background-color: #000;
             overflow: hidden;
             font-family: 'Playfair Display', serif;
-            user-select: none; /* 텍스트 선택 방지 */
-            -webkit-user-select: none; /* Safari용 */
-            -moz-user-select: none; /* Firefox용 */
-            -ms-user-select: none; /* IE용 */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .container {
             width: 100vw;
@@ -31,7 +31,7 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: all 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
         .card a {
@@ -41,8 +41,21 @@
             font-weight: bold;
             text-align: center;
             padding: 15px;
-            transition: all 0.3s ease;
-            pointer-events: none; /* 링크 클릭 방지 */
+            pointer-events: none;
+        }
+        .card.focused {
+            z-index: 1000;
+            transform: translate(-50%, -50%) scale(1.5) !important;
+            top: 50% !important;
+            left: 50% !important;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .card.animated {
+            animation: pulse 2s infinite;
         }
     </style>
 </head>
@@ -67,15 +80,39 @@
             '#4FC3F7', '#9575CD', '#F06292', '#A1887F', '#90A4AE'
         ];
 
+        let focusedCard = null;
+
         function createCard(link, index) {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.backgroundColor = colors[index % colors.length];
             card.innerHTML = `<a href="${link.href}">${link.text}</a>`;
-            card.addEventListener('click', () => {
-                window.location.href = link.href;
-            });
+            card.addEventListener('click', () => handleCardClick(card, link.href));
             return card;
+        }
+
+        function handleCardClick(card, href) {
+            if (card.classList.contains('focused')) {
+                window.location.href = href;
+            } else {
+                if (focusedCard) {
+                    unfocusCard(focusedCard);
+                }
+                focusCard(card);
+            }
+        }
+
+        function focusCard(card) {
+            card.classList.add('focused', 'animated');
+            focusedCard = card;
+            stopCardAnimation();
+        }
+
+        function unfocusCard(card) {
+            card.classList.remove('focused', 'animated');
+            moveCard(card);
+            focusedCard = null;
+            startCardAnimation();
         }
 
         function animateCards() {
@@ -85,17 +122,10 @@
             links.forEach((link, index) => {
                 const card = createCard(link, index);
                 container.appendChild(card);
-
                 moveCard(card);
-                
-                card.addEventListener('mouseover', () => {
-                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(0deg) scale(1.1)`;
-                });
-
-                card.addEventListener('mouseout', () => {
-                    card.style.transform = `translate(${card.dataset.x}px, ${card.dataset.y}px) rotate(${card.dataset.rotate}deg) scale(1)`;
-                });
             });
+
+            startCardAnimation();
         }
 
         function moveCard(card) {
@@ -103,20 +133,31 @@
             const randomY = Math.random() * (window.innerHeight - 225);
             const randomRotate = Math.random() * 360 - 180;
 
-            card.dataset.x = randomX;
-            card.dataset.y = randomY;
-            card.dataset.rotate = randomRotate;
-
             card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg)`;
         }
 
-        window.addEventListener('load', animateCards);
-        window.addEventListener('resize', animateCards);
+        let animationInterval;
 
-        setInterval(() => {
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(moveCard);
-        }, 10000);
+        function startCardAnimation() {
+            if (!animationInterval) {
+                animationInterval = setInterval(() => {
+                    const cards = document.querySelectorAll('.card:not(.focused)');
+                    cards.forEach(moveCard);
+                }, 5000);
+            }
+        }
+
+        function stopCardAnimation() {
+            clearInterval(animationInterval);
+            animationInterval = null;
+        }
+
+        window.addEventListener('load', animateCards);
+        window.addEventListener('resize', () => {
+            if (!focusedCard) {
+                animateCards();
+            }
+        });
     </script>
 </body>
 </html>
