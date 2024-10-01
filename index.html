@@ -121,8 +121,17 @@
         }
 
         function moveCard(card) {
-            const randomX = Math.random() * (window.innerWidth - 150);
-            const randomY = Math.random() * (window.innerHeight - 225);
+            const cardWidth = 150;
+            const cardHeight = 225;
+            const minVisiblePercentage = 0.2; // 20% 최소 가시성
+
+            const maxX = window.innerWidth - cardWidth * minVisiblePercentage;
+            const minX = -cardWidth * (1 - minVisiblePercentage);
+            const maxY = window.innerHeight - cardHeight * minVisiblePercentage;
+            const minY = -cardHeight * (1 - minVisiblePercentage);
+
+            const randomX = Math.random() * (maxX - minX) + minX;
+            const randomY = Math.random() * (maxY - minY) + minY;
             const randomRotate = Math.random() * 360 - 180;
             const randomScale = 0.8 + Math.random() * 0.4;
 
