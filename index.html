@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CARD</title>
+    <title>인터랙티브 카드 덱</title>
     <style>
         @font-face {
-            font-family: 'neurimboGothicRegular';
-            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-01@1.0/neurimboGothicRegular.woff2') format('woff2');
-            font-weight: normal;
+            font-family: 'Pretendard-Regular';
+            src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+            font-weight: 400;
             font-style: normal;
         }
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
+            background-color: #000000;
             overflow: hidden;
-            font-family: 'neurimboGothicRegular', sans-serif;
+            font-family: 'Pretendard-Regular', sans-serif;
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -25,37 +25,87 @@
         .container {
             width: 100vw;
             height: 100vh;
-            position: relative;
-        }
-        .card {
-            position: absolute;
-            width: 150px;
-            height: 225px;
-            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
-            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            perspective: 1000px;
         }
-        .card a {
-            color: #000;
-            text-decoration: none;
-            font-size: 18px;
+        .carousel {
+            position: relative;
+            width: 160px;
+            height: 240px;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: grab;
+        }
+        .carousel:active {
+            cursor: grabbing;
+        }
+        .card {
+            position: absolute;
+            width: 140px;
+            height: 210px;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            backface-visibility: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 4px solid white;
+            transform-origin: center;
+        }
+        .card:hover {
+            transform: scale(1.05) translateZ(20px);
+            box-shadow: 0 8px 16px rgba(255,255,255,0.2);
+        }
+        .card-color {
+            width: 100%;
+            height: 80%;
+            transition: all 0.3s;
+        }
+        .card:hover .card-color {
+            height: 85%;
+        }
+        .card-info {
+            width: 100%;
+            height: 20%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            box-sizing: border-box;
+            background-color: white;
+            font-size: 10px;
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.3s;
+        }
+        .card:hover .card-info {
+            height: 15%;
+            font-size: 9px;
+        }
+        .card-title {
             font-weight: bold;
-            text-align: center;
-            padding: 15px;
-            pointer-events: none;
+            margin-right: 5px;
         }
-        .card.focused {
+        .card-subtitle {
+            color: #666;
+        }
+        .card.selected {
+            transform: translateZ(80px) scale(1.2);
             z-index: 1000;
-            transform: translate(-50%, -50%) scale(1.5) !important;
         }
     </style>
 </head>
 <body>
-    <div class="container" id="cardContainer"></div>
+    <div class="container">
+        <div class="carousel" id="carousel"></div>
+    </div>
 
     <script>
         const links = [
@@ -67,79 +117,132 @@
             {href: "https://thunder.askitmore.com", text: "구름과 번개"},
             {href: "https://super.askitmore.com", text: "채터누가 클럽"},
             {href: "8.html", text: "스마트폰 스트레스 테스트"},
-            {href: "9.html", text: "이중 회전 추"}
+            {href: "9.html", text: "이중 회전 추"},
+            {href: "last.html", text: "마지막 카드"}
         ];
 
         const colors = [
-            '#E57373', '#FFB74D', '#FFF176', '#81C784', 
-            '#4FC3F7', '#9575CD', '#F06292', '#A1887F', '#90A4AE'
+            '#E94E77', '#8A3D7E', '#69A553', '#E2C044', '#F16B3C',
+            '#4E598C', '#9DC4B5', '#C39BD3', '#F1948A', '#85C1E9'
         ];
+
+        function getRandomDate() {
+            const year = 2024;
+            const month = 9;
+            const day = Math.floor(Math.random() * 30) + 1;
+            return `${year}.${month.toString().padStart(2, '0')}.${day.toString().padStart(2, '0')}`;
+        }
+
+        let currentAngle = 0;
+        const carousel = document.getElementById('carousel');
+        const totalCards = links.length;
+        let isDragging = false;
+        let startX, startAngle;
+        let autoRotateInterval;
 
         function createCard(link, index) {
             const card = document.createElement('div');
             card.className = 'card';
-            card.style.backgroundColor = colors[index % colors.length];
-            card.innerHTML = `<a href="${link.href}">${link.text}</a>`;
-            card.addEventListener('click', () => handleCardClick(card, link.href));
+            const color = colors[index % colors.length];
+            card.innerHTML = `
+                <div class="card-color" style="background-color: ${color};"></div>
+                <div class="card-info">
+                    <span class="card-title">${link.text}</span>
+                    <span class="card-subtitle">${getRandomDate()}</span>
+                </div>
+            `;
+            
+            const angle = (index / totalCards) * 360;
+            const radius = 240;
+            card.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+            
+            card.addEventListener('click', (e) => handleCardClick(e, card, link.href));
             return card;
         }
 
-        function handleCardClick(card, href) {
-            if (card.classList.contains('focused')) {
-                window.location.href = href;
-            } else {
-                reshuffleCards(card);
+        function handleCardClick(e, card, href) {
+            if (!isDragging) {
+                if (card.classList.contains('selected')) {
+                    window.location.href = href;
+                } else {
+                    const allCards = document.querySelectorAll('.card');
+                    allCards.forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                }
             }
         }
 
-        function reshuffleCards(focusedCard) {
-            const allCards = document.querySelectorAll('.card');
-            allCards.forEach(c => {
-                c.classList.remove('focused');
-                c.style.zIndex = Math.floor(Math.random() * 900);  // Reset z-index for all cards
-            });
-            
-            focusedCard.classList.add('focused');
-            focusedCard.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
-            focusedCard.style.top = '50%';
-            focusedCard.style.left = '50%';
-            focusedCard.style.zIndex = '1000';  // Ensure focused card is on top
-            
-            const otherCards = Array.from(allCards).filter(c => c !== focusedCard);
-            otherCards.forEach(moveCard);
+        function rotateCarousel(angle) {
+            currentAngle = angle;
+            carousel.style.transform = `rotateY(${currentAngle}deg)`;
         }
 
-        function animateCards() {
-            const container = document.getElementById('cardContainer');
-            container.innerHTML = '';
-
+        function initializeCarousel() {
+            carousel.innerHTML = '';
             links.forEach((link, index) => {
                 const card = createCard(link, index);
-                container.appendChild(card);
-                moveCard(card);
+                carousel.appendChild(card);
             });
         }
 
-        function moveCard(card) {
-            const cardWidth = 150;
-            const cardHeight = 225;
-            const minVisiblePercentage = 0.2; // 20% 최소 가시성
-
-            const maxX = window.innerWidth - cardWidth * minVisiblePercentage;
-            const minX = -cardWidth * (1 - minVisiblePercentage);
-            const maxY = window.innerHeight - cardHeight * minVisiblePercentage;
-            const minY = -cardHeight * (1 - minVisiblePercentage);
-
-            const randomX = Math.random() * (maxX - minX) + minX;
-            const randomY = Math.random() * (maxY - minY) + minY;
-            const randomRotate = Math.random() * 360 - 180;
-            const randomScale = 0.8 + Math.random() * 0.4;
-
-            card.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotate}deg) scale(${randomScale})`;
+        function handleStart(e) {
+            isDragging = true;
+            startX = e.pageX || e.touches[0].pageX;
+            startAngle = currentAngle;
+            carousel.style.transition = 'none';
+            stopAutoRotate();
         }
 
-        window.addEventListener('load', animateCards);
-        window.addEventListener('resize', animateCards);
+        function handleMove(e) {
+            if (!isDragging) return;
+            const x = e.pageX || e.touches[0].pageX;
+            const dx = x - startX;
+            const newAngle = startAngle + dx * 0.5;
+            rotateCarousel(newAngle);
+        }
+
+        function handleEnd() {
+            isDragging = false;
+            carousel.style.transition = 'transform 0.5s';
+            const snapAngle = Math.round(currentAngle / (360 / totalCards)) * (360 / totalCards);
+            rotateCarousel(snapAngle);
+            startAutoRotate();
+        }
+
+        function autoRotate() {
+            currentAngle -= 1;  // 부드러운 회전을 위해 각도를 작게 변경
+            rotateCarousel(currentAngle);
+        }
+
+        function startAutoRotate() {
+            stopAutoRotate();
+            autoRotateInterval = setInterval(autoRotate, 50);  // 20fps로 부드럽게 회전
+        }
+
+        function stopAutoRotate() {
+            if (autoRotateInterval) {
+                clearInterval(autoRotateInterval);
+            }
+        }
+
+        carousel.addEventListener('mousedown', handleStart);
+        carousel.addEventListener('touchstart', handleStart);
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove);
+
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        window.addEventListener('load', () => {
+            initializeCarousel();
+            startAutoRotate();
+        });
+        window.addEventListener('resize', initializeCarousel);
+
+        // 마우스가 캐러솔 위에 있을 때 자동 회전 멈춤
+        carousel.addEventListener('mouseenter', stopAutoRotate);
+        carousel.addEventListener('mouseleave', startAutoRotate);
     </script>
 </body>
 </html>
