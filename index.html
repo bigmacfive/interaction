@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인터랙티브 카드 덱</title>
+    <title>DECK</title>
     <style>
         @font-face {
             font-family: 'Pretendard-Regular';
@@ -45,7 +45,7 @@
             position: absolute;
             width: 140px;
             height: 210px;
-            border-radius: 0;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -63,42 +63,61 @@
         }
         .card-color {
             width: 100%;
-            height: 80%;
+            height: 70%;
             transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-emoji {
+            font-size: 36px; /* 이모지 크기를 크게 증가 */
+            line-height: 1;
         }
         .card:hover .card-color {
-            height: 85%;
+            height: 75%;
         }
         .card-info {
             width: 100%;
-            height: 20%;
+            height: 30%;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
             padding: 5px;
             box-sizing: border-box;
             background-color: white;
             font-size: 10px;
-            line-height: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            line-height: 1.2;
             transition: all 0.3s;
+            overflow: hidden;
         }
         .card:hover .card-info {
-            height: 15%;
-            font-size: 9px;
+            height: 25%;
         }
         .card-title {
             font-weight: bold;
-            margin-right: 5px;
+            margin-bottom: 3px;
+            text-align: center;
         }
         .card-subtitle {
             color: #666;
         }
         .card.selected {
-            transform: translateZ(80px) scale(1.2);
+            transform: translateZ(80px) scale(1.2) rotateY(360deg);
             z-index: 1000;
+        }
+        .card.selected .card-color {
+            height: 100%;
+        }
+        .card.selected .card-info {
+            position: absolute;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+        .card.selected:hover .card-info {
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -109,16 +128,16 @@
 
     <script>
         const links = [
-            {href: "1.html", text: "푸터에 들어갈 내용"},
-            {href: "2.html", text: "내 취향 100% 스마트폰"},
-            {href: "3.html", text: "명함은 쓸모가 없나요"},
-            {href: "4.html", text: "내용을 잊게 하는 인터렉션"},
-            {href: "5.html", text: "사무실 앞 불꽃놀이"},
-            {href: "https://thunder.askitmore.com", text: "구름과 번개"},
-            {href: "https://super.askitmore.com", text: "채터누가 클럽"},
-            {href: "8.html", text: "스마트폰 스트레스 테스트"},
-            {href: "9.html", text: "이중 회전 추"},
-            {href: "10.html", text: "권능 체험 사이트"}
+            {href: "1.html", text: "푸터에 들어갈 내용", icon: "📝"},
+            {href: "2.html", text: "내 취향 100% 스마트폰", icon: "📱"},
+            {href: "3.html", text: "명함은 쓸모가 없나요", icon: "💼"},
+            {href: "4.html", text: "내용을 잊게 하는 인터렉션", icon: "🔄"},
+            {href: "5.html", text: "사무실 앞 불꽃놀이", icon: "🎆"},
+            {href: "https://thunder.askitmore.com", text: "구름과 번개", icon: "⚡"},
+            {href: "https://super.askitmore.com", text: "채터누가 클럽", icon: "🎭"},
+            {href: "8.html", text: "스마트폰 스트레스 테스트", icon: "🧘"},
+            {href: "9.html", text: "이중 회전 추", icon: "🌀"},
+            {href: "last.html", text: "마지막 카드", icon: "🏁"}
         ];
 
         const colors = [
@@ -138,17 +157,18 @@
         const totalCards = links.length;
         let isDragging = false;
         let startX, startAngle;
-        let autoRotateInterval;
 
         function createCard(link, index) {
             const card = document.createElement('div');
             card.className = 'card';
             const color = colors[index % colors.length];
             card.innerHTML = `
-                <div class="card-color" style="background-color: ${color};"></div>
+                <div class="card-color" style="background-color: ${color};">
+                    <div class="card-emoji">${link.icon}</div>
+                </div>
                 <div class="card-info">
-                    <span class="card-title">${link.text}</span>
-                    <span class="card-subtitle">${getRandomDate()}</span>
+                    <div class="card-title">${link.text}</div>
+                    <div class="card-subtitle">${getRandomDate()}</div>
                 </div>
             `;
             
@@ -162,13 +182,20 @@
 
         function handleCardClick(e, card, href) {
             if (!isDragging) {
-                if (card.classList.contains('selected')) {
+                const allCards = document.querySelectorAll('.card');
+                allCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                
+                // 클릭 효과 애니메이션
+                card.style.animation = 'pulse 0.5s';
+                setTimeout(() => {
+                    card.style.animation = '';
+                }, 500);
+
+                // 2초 후 링크로 이동
+                setTimeout(() => {
                     window.location.href = href;
-                } else {
-                    const allCards = document.querySelectorAll('.card');
-                    allCards.forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                }
+                }, 2000);
             }
         }
 
@@ -190,7 +217,6 @@
             startX = e.pageX || e.touches[0].pageX;
             startAngle = currentAngle;
             carousel.style.transition = 'none';
-            stopAutoRotate();
         }
 
         function handleMove(e) {
@@ -206,23 +232,6 @@
             carousel.style.transition = 'transform 0.5s';
             const snapAngle = Math.round(currentAngle / (360 / totalCards)) * (360 / totalCards);
             rotateCarousel(snapAngle);
-            startAutoRotate();
-        }
-
-        function autoRotate() {
-            currentAngle -= 1;  // 부드러운 회전을 위해 각도를 작게 변경
-            rotateCarousel(currentAngle);
-        }
-
-        function startAutoRotate() {
-            stopAutoRotate();
-            autoRotateInterval = setInterval(autoRotate, 50);  // 20fps로 부드럽게 회전
-        }
-
-        function stopAutoRotate() {
-            if (autoRotateInterval) {
-                clearInterval(autoRotateInterval);
-            }
         }
 
         carousel.addEventListener('mousedown', handleStart);
@@ -234,15 +243,8 @@
         document.addEventListener('mouseup', handleEnd);
         document.addEventListener('touchend', handleEnd);
 
-        window.addEventListener('load', () => {
-            initializeCarousel();
-            startAutoRotate();
-        });
+        window.addEventListener('load', initializeCarousel);
         window.addEventListener('resize', initializeCarousel);
-
-        // 마우스가 캐러솔 위에 있을 때 자동 회전 멈춤
-        carousel.addEventListener('mouseenter', stopAutoRotate);
-        carousel.addEventListener('mouseleave', startAutoRotate);
     </script>
 </body>
 </html>
